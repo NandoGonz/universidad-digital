@@ -71,15 +71,23 @@ jobs:
         with:
           node-version: "22"
       - name: Verificar configuración del destino
+        id: deployment_config
         run: |
-          test -n "$RAILWAY_TOKEN" || { echo 'Falta RAILWAY_TOKEN'; exit 1; }
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::warning::Falta RAILWAY_TOKEN; se omite el despliegue en Railway."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           test -n "$RAILWAY_PROJECT_ID" || { echo 'Falta RAILWAY_PROJECT_ID'; exit 1; }
           test -n "$RAILWAY_SERVICE_ID" || { echo 'Falta RAILWAY_SERVICE_ID'; exit 1; }
           test -n "$RAILWAY_API_URL" || { echo 'Falta RAILWAY_API_URL'; exit 1; }
+          echo "configured=true" >> "$GITHUB_OUTPUT"
       - name: Desplegar el backend en Railway
+        if: steps.deployment_config.outputs.configured == 'true'
         run: >-
           npx --yes @railway/cli@5.62.1 up ./backend --path-as-root
           --project "$RAILWAY_PROJECT_ID" --environment production
           --service "$RAILWAY_SERVICE_ID"
       - name: Verificar API y PostgreSQL remotos
+        if: steps.deployment_config.outputs.configured == 'true'
         run: python backend/scripts/check_deployment.py "$RAILWAY_API_URL"
