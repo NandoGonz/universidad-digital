@@ -4,6 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
+ENV PYTHONPATH=/app
 
 COPY requirements.lock ./
 RUN pip install --no-cache-dir --disable-pip-version-check -r requirements.lock \
